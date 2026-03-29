@@ -1,23 +1,14 @@
-import { AuthProvider, useAuth } from '@/entities/user/model/auth-context';
+import { MantineProvider } from '@mantine/core';
+import { AuthProvider } from '@/entities/user/model/auth-context';
+import { AppRouter } from '@/app/providers/router';
+import '@mantine/core/styles.css';
 
-const TestAuth = () => {
-  const { user, isLoading } = useAuth();
-
-  if (isLoading) return <p>Загрузка...</p>;
-
+export default function App() {
   return (
-    <div>
-      {user ? <h1>Привет, {user.email}</h1> : <h1>Авторизуйтесь</h1>}
-    </div>
+    <MantineProvider>
+      <AuthProvider>
+        <AppRouter />
+      </AuthProvider>
+    </MantineProvider>
   );
-};
-
-function App() {
-  return (
-    <AuthProvider>
-      <TestAuth />
-    </AuthProvider>
-  )
 }
-
-export default App
