@@ -15,10 +15,12 @@ import {
   createUserWithEmailAndPassword 
 } from 'firebase/auth';
 import { auth } from '@/shared/api/firebase';
+import { useNavigate } from 'react-router-dom';
 
 export const LoginForm = () => {
   const [type, setType] = useState<'login' | 'register'>('login');
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const form = useForm({
     initialValues: {
@@ -37,8 +39,10 @@ export const LoginForm = () => {
     try {
       if (type === 'login') {
         await signInWithEmailAndPassword(auth, values.email, values.password);
+        navigate('/', { replace: true });
       } else {
         await createUserWithEmailAndPassword(auth, values.email, values.password);
+        navigate('/', { replace: true });
       }
     } catch (err: any) {
       setError(err.message);
