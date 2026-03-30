@@ -1,0 +1,43 @@
+import { NoteEditorPanel } from '@/widgets/note-editor-panel/ui/NoteEditorPanel';
+import { NotesListPanel } from '@/widgets/notes-list-panel/ui/NotesListPanel';
+import { NotesSidebar } from '@/widgets/notes-sidebar/ui/NotesSidebar';
+import { AppShell } from '@mantine/core';
+
+export const NotesPage = () => {
+  return (
+    <AppShell
+      mode="static"
+      navbar={{ width: 260, breakpoint: 'sm' }}
+      padding={0}
+      styles={{
+        root: {
+          minHeight: '100dvh',
+          width: '100%',
+          maxWidth: '100%',
+        },
+        main: {
+          flex: 1,
+          minHeight: 0,
+        },
+      }}
+    >
+      <NotesSidebar />
+
+      <AppShell.Main
+        style={{
+          display: 'flex',
+          flex: 1,
+          minWidth: 0,
+          minHeight: 0,
+          textAlign: 'left',
+          justifyContent: 'flex-start',
+          alignItems: 'stretch',
+        }}
+      >
+        <NotesListPanel />
+
+        <NoteEditorPanel />
+      </AppShell.Main>
+    </AppShell>
+  );
+};
