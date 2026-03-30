@@ -5,10 +5,31 @@ import '@mantine/core/styles.css';
 
 export default function App() {
   return (
-    <MantineProvider>
-      <AuthProvider>
-        <AppRouter />
-      </AuthProvider>
-    </MantineProvider>
+    <div
+      style={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        width: '100%',
+        minHeight: '100dvh',
+      }}
+    >
+      <MantineProvider>
+        <AuthProvider>
+          <div
+            style={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              minHeight: 0,
+              width: '100%',
+              height: '100%',
+            }}
+          >
+            <AppRouter />
+          </div>
+        </AuthProvider>
+      </MantineProvider>
+    </div>
   );
 }
