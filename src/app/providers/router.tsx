@@ -9,8 +9,7 @@ import {
 import { useAuth } from '@/entities/user/model/auth-context';
 import { Center, Loader } from '@mantine/core';
 import { PrivateRoute } from './PrivateRoute';
-
-const NotesPlaceholder = () => <h1>Здесь будут твои заметки</h1>;
+import { NotesPage } from '@/pages/notes/ui/NotesPage';
 
 export const AppRouter = () => {
   const { isLoading } = useAuth();
@@ -45,7 +44,7 @@ export const AppRouter = () => {
             <Route
               index
               lazy={async () => {
-                return { Component: NotesPlaceholder };
+                return { Component: NotesPage };
               }}
             />
           </Route>
@@ -55,5 +54,18 @@ export const AppRouter = () => {
     )
   );
 
-  return <RouterProvider router={router} />;
+  return (
+    <div
+      style={{
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: 0,
+        width: '100%',
+        height: '100%',
+      }}
+    >
+      <RouterProvider router={router} />
+    </div>
+  );
 };
