@@ -3,6 +3,7 @@ import { NotesListPanel } from '@/widgets/notes-list-panel';
 import { NotesSidebar } from '@/widgets/notes-sidebar';
 import { AppShell } from '@mantine/core';
 import { NotesProvider, useNotes } from '@/entities/note/model/notes-context';
+import { useState } from 'react';
 
 export const NotesPage = () => {
   return (
@@ -22,10 +23,12 @@ export const NotesPageContent = () => {
     deleteNote,
     selectNote,
   } = useNotes();
+  const [editNoteId, setEditNoteId] = useState<string | null>(null);
 
   const handleCreateNote = () => {
     console.log('[NotesPageContent] Вызываю createNote, текущих заметок:', notes.length);
-    createNote();
+    const id = createNote();
+    setEditNoteId(id);
   };
 
   return (
@@ -68,6 +71,7 @@ export const NotesPageContent = () => {
           note={selectedNote}
           onCreateNote={handleCreateNote}
           onUpdateNote={updateNote}
+          editNoteId={editNoteId}
         />
 
       </AppShell.Main>

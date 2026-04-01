@@ -3,11 +3,11 @@ import { IconSquarePlus, IconPencil, IconSearch, IconTrash } from '@tabler/icons
 
 type NoteToolbarProps = {
   onCreateNote: () => void;
-  onStartEdit: () => void;
+  onToggleEdit: () => void;
   onDeleteNote: () => void;
 };
 
-export const NoteToolbar = ({ onCreateNote }: NoteToolbarProps) => {
+export const NoteToolbar = ({ onCreateNote, onToggleEdit, onDeleteNote }: NoteToolbarProps) => {
   const handleCreateClick = () => {
     console.log('[NoteToolbar] Клик по кнопке создания заметки');
     onCreateNote();
@@ -47,6 +47,7 @@ export const NoteToolbar = ({ onCreateNote }: NoteToolbarProps) => {
                 size="md"
                 type="button"
                 aria-label="Редактировать заметку"
+                onClick={onToggleEdit}
               >
                 <IconPencil size={18} stroke={1.5} />
               </ActionIcon>
@@ -58,6 +59,7 @@ export const NoteToolbar = ({ onCreateNote }: NoteToolbarProps) => {
                 size="md"
                 type="button"
                 aria-label="Удалить заметку"
+                onClick={onDeleteNote}
               >
                 <IconTrash size={18} stroke={1.5} />
               </ActionIcon>

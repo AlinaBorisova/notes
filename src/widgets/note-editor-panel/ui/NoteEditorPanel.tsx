@@ -9,18 +9,24 @@ type NoteEditorPanelProps = {
   note: Note | null;
   onCreateNote: () => void;
   onUpdateNote: (id: string, patch: { title?: string; content?: string }) => void;
+  editNoteId?: string | null
 };
 
-export const NoteEditorPanel = ({ note, onCreateNote, onUpdateNote }: NoteEditorPanelProps) => {
+export const NoteEditorPanel = ({ note, onCreateNote, onUpdateNote, editNoteId }: NoteEditorPanelProps) => {
   const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
-    if (note) {
+    if (!note) {
+      setIsEditing(false);
+      return;
+    }
+
+    if (editNoteId && note.id === editNoteId) {
       setIsEditing(true);
     } else {
       setIsEditing(false);
     }
-  }, [note]);
+  }, [note?.id, editNoteId]);
 
   return (
     <Box
@@ -46,10 +52,7 @@ export const NoteEditorPanel = ({ note, onCreateNote, onUpdateNote }: NoteEditor
       >
         <NoteToolbar
           onCreateNote={onCreateNote}
-          onStartEdit={() => {
-            if (!note) return;
-            setIsEditing(true);
-          }}
+          onToggleEdit={() => setIsEditing((prev) => !prev)}
           onDeleteNote={() => {
             console.log('Удаление заметки, пока не реализовано');
           }}

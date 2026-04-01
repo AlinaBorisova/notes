@@ -16,7 +16,7 @@ type NotesState = {
 
 type NotesAction =
   | { type: 'init'; payload: Note[] }
-  | { type: 'create'; payload: { title?: string; content?: string } }
+  | { type: 'create'; payload: { id: NoteId; title?: string; content?: string } }
   | { type: 'update'; payload: { id: NoteId; content?: string; title?: string } }
   | { type: 'delete'; payload: { id: NoteId } }
   | { type: 'select'; payload: { id: NoteId | null } };
@@ -25,7 +25,7 @@ type NotesContextValue = {
   notes: Note[];
   selectedNoteId: NoteId | null;
   selectedNote: Note | null;
-  createNote: (params?: { title?: string; content?: string }) => void;
+  createNote: (params?: { title?: string; content?: string }) => NoteId;
   updateNote: (id: NoteId, patch: { title?: string; content?: string }) => void;
   deleteNote: (id: NoteId) => void;
   selectNote: (id: NoteId | null) => void;
@@ -56,7 +56,7 @@ function notesReducer(state: NotesState, action: NotesAction): NotesState {
     case 'create': {
       const now = new Date().toISOString();
       const newNote: Note = {
-        id: crypto.randomUUID(),
+        id: action.payload.id,
         title: action.payload.title ?? 'Новая заметка',
         content: action.payload.content ?? '',
         createdAt: now,
@@ -76,11 +76,11 @@ function notesReducer(state: NotesState, action: NotesAction): NotesState {
       const notes = state.notes.map((note) =>
         note.id === id
           ? {
-              ...note,
-              title: title ?? note.title,
-              content: content ?? note.content,
-              updatedAt: new Date().toISOString(),
-            }
+            ...note,
+            title: title ?? note.title,
+            content: content ?? note.content,
+            updatedAt: new Date().toISOString(),
+          }
           : note,
       );
       return { ...state, notes };
@@ -124,8 +124,20 @@ export function NotesProvider({ children }: NotesProviderProps) {
 
   const createNote = useCallback(
     (params?: { title?: string; content?: string }) => {
-      console.log('[NotesContext] Диспатч создания заметки, параметры:', params);
-      dispatch({ type: 'create', payload: params ?? {} });
+      const now = new Date().toISOString();
+      const id = crypto.randomUUID();
+
+      const newNote: Note = {
+        id,
+        title: params?.title ?? 'Новая заметка',
+        content: params?.content ?? '',
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      dispatch({ type: 'create', payload: { ...params, id } });
+
+      return id;
     },
     [],
   );
