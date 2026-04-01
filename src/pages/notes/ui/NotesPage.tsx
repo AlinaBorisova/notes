@@ -1,6 +1,6 @@
-import { NoteEditorPanel } from '@/widgets/note-editor-panel/ui/NoteEditorPanel';
-import { NotesListPanel } from '@/widgets/notes-list-panel/ui/NotesListPanel';
-import { NotesSidebar } from '@/widgets/notes-sidebar/ui/NotesSidebar';
+import { NoteEditorPanel } from '@/widgets/note-editor-panel';
+import { NotesListPanel } from '@/widgets/notes-list-panel';
+import { NotesSidebar } from '@/widgets/notes-sidebar';
 import { AppShell } from '@mantine/core';
 
 export const NotesPage = () => {

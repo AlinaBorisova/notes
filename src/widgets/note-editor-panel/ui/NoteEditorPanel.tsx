@@ -1,5 +1,5 @@
 import { Box, Title, Text } from "@mantine/core";
-import { NoteToolbar } from '@/features/note-toolbar/ui/NoteToolbar';
+import { NoteToolbar } from '@/features/note-toolbar';
 
 export const NoteEditorPanel = () => {
   return (
