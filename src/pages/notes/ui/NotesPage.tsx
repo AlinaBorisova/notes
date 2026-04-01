@@ -58,7 +58,11 @@ export const NotesPageContent = () => {
           alignItems: 'stretch',
         }}
       >
-        <NotesListPanel />
+        <NotesListPanel
+          notes={notes}
+          selectedNoteId={selectedNoteId}
+          onSelectNote={selectNote}
+        />
 
         <NoteEditorPanel
           note={selectedNote}
