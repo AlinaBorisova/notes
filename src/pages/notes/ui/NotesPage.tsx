@@ -13,6 +13,21 @@ export const NotesPage = () => {
 };
 
 export const NotesPageContent = () => {
+  const {
+    notes,
+    selectedNote,
+    selectedNoteId,
+    createNote,
+    updateNote,
+    deleteNote,
+    selectNote,
+  } = useNotes();
+
+  const handleCreateNote = () => {
+    console.log('[NotesPageContent] Вызываю createNote, текущих заметок:', notes.length);
+    createNote();
+  };
+
   return (
     <AppShell
       mode="static"
@@ -45,7 +60,12 @@ export const NotesPageContent = () => {
       >
         <NotesListPanel />
 
-        <NoteEditorPanel />
+        <NoteEditorPanel
+          note={selectedNote}
+          onCreateNote={handleCreateNote}
+          onUpdateNote={updateNote}
+        />
+
       </AppShell.Main>
     </AppShell>
   );

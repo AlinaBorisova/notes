@@ -63,6 +63,8 @@ function notesReducer(state: NotesState, action: NotesAction): NotesState {
         updatedAt: now,
       };
 
+      console.log('[notesReducer] Создана новая заметка:', newNote);
+
       return {
         notes: [newNote, ...state.notes],
         selectedNoteId: newNote.id,
@@ -122,6 +124,7 @@ export function NotesProvider({ children }: NotesProviderProps) {
 
   const createNote = useCallback(
     (params?: { title?: string; content?: string }) => {
+      console.log('[NotesContext] Диспатч создания заметки, параметры:', params);
       dispatch({ type: 'create', payload: params ?? {} });
     },
     [],

@@ -1,9 +1,29 @@
-import { Box, Title, Text } from "@mantine/core";
+import { Box, Title, Text, TextInput, Textarea } from "@mantine/core";
 import { NoteToolbar } from '@/features/note-toolbar';
+import type { Note } from '@/entities/note/model/types';
+import { formatNoteDate } from '@/shared/lib/formatDate';
+import type React from 'react';
+import { useEffect, useState } from "react";
 
-export const NoteEditorPanel = () => {
+type NoteEditorPanelProps = {
+  note: Note | null;
+  onCreateNote: () => void;
+  onUpdateNote: (id: string, patch: { title?: string; content?: string }) => void;
+};
+
+export const NoteEditorPanel = ({ note, onCreateNote, onUpdateNote }: NoteEditorPanelProps) => {
+  const [isEditing, setIsEditing] = useState(false);
+
+  useEffect(() => {
+    if (note) {
+      setIsEditing(true);
+    } else {
+      setIsEditing(false);
+    }
+  }, [note]);
+
   return (
-    < Box
+    <Box
       style={{
         flex: 1,
         minWidth: 0,
@@ -24,19 +44,58 @@ export const NoteEditorPanel = () => {
           backdropFilter: 'blur(10px)',
         }}
       >
-        <NoteToolbar />
+        <NoteToolbar
+          onCreateNote={onCreateNote}
+          onStartEdit={() => {
+            if (!note) return;
+            setIsEditing(true);
+          }}
+          onDeleteNote={() => {
+            console.log('Удаление заметки, пока не реализовано');
+          }}
+        />
       </Box>
 
       <Box
         style={{ flex: 1, minHeight: 0, overflow: 'auto' }}
         p={40}
       >
-        <Text size="xs" c="dimmed" ta="center" mb="lg">
-          29 марта 2026 г., 21:30
-        </Text>
-        <Title order={2} fw={700}>
-          Название заметки
-        </Title>
+        {!note && (
+          <Text c="dimmed">Выберите заметку слева или создайте новую.</Text>
+        )}
+
+        {note && isEditing && (
+          <>
+            <TextInput
+              label="Заголовок"
+              value={note.title}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                onUpdateNote(note.id, { title: event.currentTarget.value })
+              }
+              mb="sm"
+            />
+            <Textarea
+              label="Текст"
+              autosize
+              minRows={6}
+              value={note.content}
+              onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) =>
+                onUpdateNote(note.id, { content: event.currentTarget.value })
+              }
+            />
+          </>
+        )}
+        {note && !isEditing && (
+          <>
+            <Text size="xs" c="dimmed" ta="center" mb="lg">
+              {formatNoteDate(note.updatedAt)}
+            </Text>
+            <Title order={2} fw={700} mb="sm">
+              {note.title}
+            </Title>
+            <Text size="sm">{note.content || 'Текст заметки пока пустой'}</Text>
+          </>
+        )}
       </Box>
     </Box >
   );

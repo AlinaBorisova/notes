@@ -1,7 +1,18 @@
 import { Group, ActionIcon, Paper, TextInput, Tooltip } from '@mantine/core';
 import { IconSquarePlus, IconPencil, IconSearch, IconTrash } from '@tabler/icons-react';
 
-export const NoteToolbar = () => {
+type NoteToolbarProps = {
+  onCreateNote: () => void;
+  onStartEdit: () => void;
+  onDeleteNote: () => void;
+};
+
+export const NoteToolbar = ({ onCreateNote }: NoteToolbarProps) => {
+  const handleCreateClick = () => {
+    console.log('[NoteToolbar] Клик по кнопке создания заметки');
+    onCreateNote();
+  };
+
   return (
     <Group gap="sm" wrap="nowrap" justify="space-between" style={{ width: '100%' }}>
       <Tooltip label="Новая заметка" position="bottom">
@@ -12,6 +23,7 @@ export const NoteToolbar = () => {
           type="button"
           radius="xl"
           aria-label="Создать новую заметку"
+          onClick={handleCreateClick}
         >
           <IconSquarePlus size={22} stroke={1.5} />
         </ActionIcon>
