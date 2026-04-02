@@ -5,6 +5,7 @@ import {
   useEffect,
   useMemo,
   useReducer,
+  useState,
 } from 'react';
 import { loadNotesFromStorage, saveNotesToStorage } from './storage';
 import type { Note, NoteId } from './types';
@@ -112,15 +113,21 @@ export function NotesProvider({ children }: NotesProviderProps) {
     notes: [],
     selectedNoteId: null,
   });
+  const [hasLoaded, setHasLoaded] = useState(false);
 
   useEffect(() => {
     const notes = loadNotesFromStorage();
+    console.log('Init: загружено заметок из localStorage:', notes.length);
     dispatch({ type: 'init', payload: notes });
+    setHasLoaded(true);
   }, []);
 
   useEffect(() => {
+    if (!hasLoaded) return;
+
+    console.log('Save: заметок в состоянии:', state.notes.length);
     saveNotesToStorage(state.notes);
-  }, [state.notes]);
+  }, [state.notes, hasLoaded]);
 
   const createNote = useCallback(
     (params?: { title?: string; content?: string }) => {
@@ -134,6 +141,8 @@ export function NotesProvider({ children }: NotesProviderProps) {
         createdAt: now,
         updatedAt: now,
       };
+
+      console.log('Create: создана новая заметка:', newNote);
 
       dispatch({ type: 'create', payload: { ...params, id } });
 
