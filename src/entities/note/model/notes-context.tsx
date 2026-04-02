@@ -10,6 +10,8 @@ import {
 import {
   collection,
   addDoc,
+  doc,
+  updateDoc,
   QueryDocumentSnapshot
 } from 'firebase/firestore';
 import { db } from '@/shared/api/firebase';
@@ -209,9 +211,28 @@ export function NotesProvider({ children }: NotesProviderProps) {
 
   const updateNote = useCallback(
     async (id: NoteId, patch: { title?: string; content?: string }) => {
-      dispatch({ type: 'update', payload: { id, ...patch } });
+      if (!user) {
+        console.log('Пользователь не авторизован');
+        return;
+      }
+
+      const updates: Record<string, string> = {
+        updatedAt: new Date().toISOString(),
+      };
+      if (patch.title !== undefined) updates.title = patch.title;
+      if (patch.content !== undefined) updates.content = patch.content;
+      if (Object.keys(updates).length <= 1) {
+        return;
+      }
+      const noteRef = doc(db, 'users', user.uid, 'notes', id);
+      try {
+        await updateDoc(noteRef, updates);
+        dispatch({ type: 'update', payload: { id, ...patch } });
+      } catch (e) {
+        console.error('updateNote: ошибка Firestore', e);
+      }
     },
-    [],
+    [user],
   );
 
   const deleteNote = useCallback(async (id: NoteId) => {
