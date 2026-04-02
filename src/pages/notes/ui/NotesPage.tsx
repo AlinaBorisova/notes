@@ -3,7 +3,8 @@ import { NotesListPanel } from '@/widgets/notes-list-panel';
 import { NotesSidebar } from '@/widgets/notes-sidebar';
 import { AppShell } from '@mantine/core';
 import { NotesProvider, useNotes } from '@/entities/note/model/notes-context';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useDebouncedValue } from '@mantine/hooks';
 
 export const NotesPage = () => {
   return (
@@ -24,6 +25,33 @@ export const NotesPageContent = () => {
     selectNote,
   } = useNotes();
   const [editNoteId, setEditNoteId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch] = useDebouncedValue(searchQuery, 300);
+
+  const filteredNotes = useMemo(() => {
+    const query = debouncedSearch.toLowerCase().trim();
+    if (!query) return notes;
+
+    return notes.filter(
+      (n) => 
+        n.title.toLowerCase().includes(query) || 
+        n.content.toLowerCase().includes(query)
+    );
+  }, [notes, debouncedSearch]);
+
+  useEffect(() => {
+    if (!debouncedSearch.trim()) return;
+  
+    const isSelectedNoteInFilter = filteredNotes.some(n => n.id === selectedNoteId);
+    
+    if (!isSelectedNoteInFilter) {
+      if (filteredNotes.length > 0) {
+        selectNote(filteredNotes[0].id);
+      } else {
+        selectNote(null);
+      }
+    }
+  }, [debouncedSearch, filteredNotes, selectedNoteId, selectNote]);
 
   const handleCreateNote = () => {
     console.log('[NotesPageContent] Вызываю createNote, текущих заметок:', notes.length);
@@ -62,7 +90,7 @@ export const NotesPageContent = () => {
         }}
       >
         <NotesListPanel
-          notes={notes}
+          notes={filteredNotes}
           selectedNoteId={selectedNoteId}
           onSelectNote={selectNote}
         />
@@ -73,6 +101,8 @@ export const NotesPageContent = () => {
           onUpdateNote={updateNote}
           editNoteId={editNoteId}
           onDeleteNote={deleteNote}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
         />
 
       </AppShell.Main>

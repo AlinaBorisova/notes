@@ -11,9 +11,11 @@ type NoteEditorPanelProps = {
   onUpdateNote: (id: string, patch: { title?: string; content?: string }) => void;
   editNoteId?: string | null
   onDeleteNote: (id: string) => void;
+  searchQuery: string;
+  onSearchChange: (value: string) => void;
 };
 
-export const NoteEditorPanel = ({ note, onCreateNote, onUpdateNote, editNoteId, onDeleteNote }: NoteEditorPanelProps) => {
+export const NoteEditorPanel = ({ note, onCreateNote, onUpdateNote, editNoteId, onDeleteNote, searchQuery, onSearchChange }: NoteEditorPanelProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [openedDelete, setOpenedDelete] = useState(false);
 
@@ -56,6 +58,8 @@ export const NoteEditorPanel = ({ note, onCreateNote, onUpdateNote, editNoteId, 
           onCreateNote={onCreateNote}
           onToggleEdit={() => setIsEditing((prev) => !prev)}
           onDeleteNote={() => setOpenedDelete(true)}
+          searchQuery={searchQuery}
+          onSearchChange={onSearchChange}
         />
 
         <Modal opened={openedDelete} onClose={() => setOpenedDelete(false)} title="Удаление заметки">

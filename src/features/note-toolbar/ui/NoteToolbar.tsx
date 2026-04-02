@@ -5,9 +5,11 @@ type NoteToolbarProps = {
   onCreateNote: () => void;
   onToggleEdit: () => void;
   onDeleteNote: () => void;
+  searchQuery: string;
+  onSearchChange: (value: string) => void;
 };
 
-export const NoteToolbar = ({ onCreateNote, onToggleEdit, onDeleteNote }: NoteToolbarProps) => {
+export const NoteToolbar = ({ onCreateNote, onToggleEdit, onDeleteNote, searchQuery, onSearchChange }: NoteToolbarProps) => {
   const handleCreateClick = () => {
     console.log('[NoteToolbar] Клик по кнопке создания заметки');
     onCreateNote();
@@ -73,6 +75,8 @@ export const NoteToolbar = ({ onCreateNote, onToggleEdit, onDeleteNote }: NoteTo
           leftSection={<IconSearch size={16} stroke={1.5} />}
           aria-label="Поиск заметок"
           style={{ flex: '1 1 160px', maxWidth: 280, minWidth: 120 }}
+          value={searchQuery}
+          onChange={(event) => onSearchChange(event.currentTarget.value)}
         />
       </Group>
     </Group>
