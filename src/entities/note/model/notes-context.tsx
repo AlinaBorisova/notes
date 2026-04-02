@@ -7,6 +7,13 @@ import {
   useReducer,
   useState,
 } from 'react';
+import {
+  collection,
+  addDoc,
+  QueryDocumentSnapshot
+} from 'firebase/firestore';
+import { db } from '@/shared/api/firebase';
+import { useAuth } from '@/entities/user/model/auth-context';
 import { loadNotesFromStorage, saveNotesToStorage } from './storage';
 import type { Note, NoteId } from './types';
 
@@ -17,7 +24,7 @@ type NotesState = {
 
 type NotesAction =
   | { type: 'init'; payload: Note[] }
-  | { type: 'create'; payload: { id: NoteId; title?: string; content?: string } }
+  | { type: 'create'; payload: { id: NoteId; userId: string; title?: string; content?: string } }
   | { type: 'update'; payload: { id: NoteId; content?: string; title?: string } }
   | { type: 'delete'; payload: { id: NoteId } }
   | { type: 'select'; payload: { id: NoteId | null } };
@@ -26,10 +33,11 @@ type NotesContextValue = {
   notes: Note[];
   selectedNoteId: NoteId | null;
   selectedNote: Note | null;
-  createNote: (params?: { title?: string; content?: string }) => NoteId;
-  updateNote: (id: NoteId, patch: { title?: string; content?: string }) => void;
-  deleteNote: (id: NoteId) => void;
+  createNote: (params?: { title?: string; content?: string }) => Promise<NoteId | undefined>;
+  updateNote: (id: NoteId, patch: { title?: string; content?: string }) => Promise<void>;
+  deleteNote: (id: NoteId) => Promise<void>;
   selectNote: (id: NoteId | null) => void;
+  isLoading: boolean;
 };
 
 type NotesProviderProps = {
@@ -46,6 +54,32 @@ export function useNotes(): NotesContextValue {
   return ctx;
 }
 
+
+export function noteFromFirestore(
+  docSnap: QueryDocumentSnapshot,
+  userId: string,
+): Note {
+  const data = docSnap.data();
+  return {
+    id: docSnap.id,
+    userId,
+    title: data.title ?? 'Новая заметка',
+    content: data.content ?? '',
+    createdAt: data.createdAt ?? new Date().toISOString(),
+    updatedAt: data.updatedAt ?? new Date().toISOString(),
+  };
+}
+
+export function noteToFirestorePayload(note: Pick<Note, 'title' | 'content' | 'createdAt' | 'updatedAt' | 'userId'>) {
+  return {
+    userId: note.userId,
+    title: note.title,
+    content: note.content,
+    createdAt: note.createdAt,
+    updatedAt: note.updatedAt,
+  };
+}
+
 function notesReducer(state: NotesState, action: NotesAction): NotesState {
   switch (action.type) {
     case 'init': {
@@ -58,6 +92,7 @@ function notesReducer(state: NotesState, action: NotesAction): NotesState {
       const now = new Date().toISOString();
       const newNote: Note = {
         id: action.payload.id,
+        userId: action.payload.userId,
         title: action.payload.title ?? 'Новая заметка',
         content: action.payload.content ?? '',
         createdAt: now,
@@ -109,11 +144,14 @@ function notesReducer(state: NotesState, action: NotesAction): NotesState {
 }
 
 export function NotesProvider({ children }: NotesProviderProps) {
+  const { user } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
   const [state, dispatch] = useReducer(notesReducer, {
     notes: [],
     selectedNoteId: null,
   });
   const [hasLoaded, setHasLoaded] = useState(false);
+
 
   useEffect(() => {
     const notes = loadNotesFromStorage();
@@ -130,35 +168,53 @@ export function NotesProvider({ children }: NotesProviderProps) {
   }, [state.notes, hasLoaded]);
 
   const createNote = useCallback(
-    (params?: { title?: string; content?: string }) => {
-      const now = new Date().toISOString();
-      const id = crypto.randomUUID();
+    async (params?: { title?: string; content?: string }) => {
+      if (!user) {
+        console.warn('createNote: пользователь не авторизован');
+        return undefined;
+      }
 
-      const newNote: Note = {
-        id,
-        title: params?.title ?? 'Новая заметка',
-        content: params?.content ?? '',
+      const now = new Date().toISOString();
+      const title = params?.title ?? 'Новая заметка';
+      const content = params?.content ?? '';
+
+      const payload = noteToFirestorePayload({
+        userId: user.uid,
+        title,
+        content,
         createdAt: now,
         updatedAt: now,
-      };
+      });
 
-      console.log('Create: создана новая заметка:', newNote);
-
-      dispatch({ type: 'create', payload: { ...params, id } });
-
-      return id;
+      try {
+        const ref = collection(db, 'users', user.uid, 'notes');
+        const docRef = await addDoc(ref, payload);
+        dispatch({
+          type: 'create',
+          payload: {
+            id: docRef.id,
+            userId: user.uid,
+            title,
+            content,
+          },
+        });
+        return docRef.id;
+      } catch (e) {
+        console.error('createNote: ошибка Firestore', e);
+        return undefined;
+      }
     },
-    [],
+    [user],
   );
 
   const updateNote = useCallback(
-    (id: NoteId, patch: { title?: string; content?: string }) => {
+    async (id: NoteId, patch: { title?: string; content?: string }) => {
       dispatch({ type: 'update', payload: { id, ...patch } });
     },
     [],
   );
 
-  const deleteNote = useCallback((id: NoteId) => {
+  const deleteNote = useCallback(async (id: NoteId) => {
     dispatch({ type: 'delete', payload: { id } });
   }, []);
 
@@ -180,8 +236,9 @@ export function NotesProvider({ children }: NotesProviderProps) {
       updateNote,
       deleteNote,
       selectNote,
+      isLoading,
     }),
-    [state.notes, state.selectedNoteId, selectedNote, createNote, updateNote, deleteNote, selectNote],
+    [state.notes, state.selectedNoteId, selectedNote, createNote, updateNote, deleteNote, selectNote, isLoading],
   );
 
   return <NotesContext.Provider value={value}>{children}</NotesContext.Provider>;

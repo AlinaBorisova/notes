@@ -53,10 +53,12 @@ export const NotesPageContent = () => {
     }
   }, [debouncedSearch, filteredNotes, selectedNoteId, selectNote]);
 
-  const handleCreateNote = () => {
+  const handleCreateNote = async () => {
     console.log('[NotesPageContent] Вызываю createNote, текущих заметок:', notes.length);
-    const id = createNote();
-    setEditNoteId(id);
+    const id = await createNote();
+    if (id) {
+      setEditNoteId(id);
+    }
   };
 
   return (
