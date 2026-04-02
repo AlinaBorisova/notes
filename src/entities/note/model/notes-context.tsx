@@ -13,11 +13,13 @@ import {
   doc,
   updateDoc,
   deleteDoc,
+  query,
+  orderBy,
+  onSnapshot,
   QueryDocumentSnapshot
 } from 'firebase/firestore';
 import { db } from '@/shared/api/firebase';
 import { useAuth } from '@/entities/user/model/auth-context';
-import { loadNotesFromStorage, saveNotesToStorage } from './storage';
 import type { Note, NoteId } from './types';
 
 type NotesState = {
@@ -26,8 +28,7 @@ type NotesState = {
 };
 
 type NotesAction =
-  | { type: 'init'; payload: Note[] }
-  | { type: 'create'; payload: { id: NoteId; userId: string; title?: string; content?: string } }
+  | { type: 'sync'; payload: Note[] }
   | { type: 'update'; payload: { id: NoteId; content?: string; title?: string } }
   | { type: 'delete'; payload: { id: NoteId } }
   | { type: 'select'; payload: { id: NoteId | null } };
@@ -84,29 +85,12 @@ export function noteToFirestorePayload(note: Pick<Note, 'title' | 'content' | 'c
 
 function notesReducer(state: NotesState, action: NotesAction): NotesState {
   switch (action.type) {
-    case 'init': {
+    case 'sync': {
       const notes = action.payload;
-      const selectedNoteId = notes[0]?.id ?? null;
+      const prev = state.selectedNoteId;
+      const selectedNoteId =
+        prev && notes.some((n) => n.id === prev) ? prev : notes[0]?.id ?? null;
       return { notes, selectedNoteId };
-    }
-
-    case 'create': {
-      const now = new Date().toISOString();
-      const newNote: Note = {
-        id: action.payload.id,
-        userId: action.payload.userId,
-        title: action.payload.title ?? 'Новая заметка',
-        content: action.payload.content ?? '',
-        createdAt: now,
-        updatedAt: now,
-      };
-
-      console.log('[notesReducer] Создана новая заметка:', newNote);
-
-      return {
-        notes: [newNote, ...state.notes],
-        selectedNoteId: newNote.id,
-      };
     }
 
     case 'update': {
@@ -146,28 +130,45 @@ function notesReducer(state: NotesState, action: NotesAction): NotesState {
 }
 
 export function NotesProvider({ children }: NotesProviderProps) {
-  const { user } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
+  const { user, isLoading: authLoading } = useAuth();
+  const [listLoading, setListLoading] = useState(true);
   const [state, dispatch] = useReducer(notesReducer, {
     notes: [],
     selectedNoteId: null,
   });
-  const [hasLoaded, setHasLoaded] = useState(false);
-
 
   useEffect(() => {
-    const notes = loadNotesFromStorage();
-    console.log('Init: загружено заметок из localStorage:', notes.length);
-    dispatch({ type: 'init', payload: notes });
-    setHasLoaded(true);
-  }, []);
+    if (authLoading) return;
 
-  useEffect(() => {
-    if (!hasLoaded) return;
+    if (!user) {
+      dispatch({ type: 'sync', payload: [] });
+      setListLoading(false);
+      return;
+    }
 
-    console.log('Save: заметок в состоянии:', state.notes.length);
-    saveNotesToStorage(state.notes);
-  }, [state.notes, hasLoaded]);
+    setListLoading(true);
+    const notesQuery = query(
+      collection(db, 'users', user.uid, 'notes'),
+      orderBy('updatedAt', 'desc'),
+    );
+
+    const unsubscribe = onSnapshot(
+      notesQuery,
+      (snapshot) => {
+        const notes = snapshot.docs.map((d) => noteFromFirestore(d, user.uid));
+        dispatch({ type: 'sync', payload: notes });
+        setListLoading(false);
+      },
+      (error) => {
+        console.error('notes snapshot:', error);
+        setListLoading(false);
+      },
+    );
+
+    return () => unsubscribe();
+  }, [user, authLoading]);
+
+  const isLoading = authLoading || listLoading;
 
   const createNote = useCallback(
     async (params?: { title?: string; content?: string }) => {
@@ -191,15 +192,7 @@ export function NotesProvider({ children }: NotesProviderProps) {
       try {
         const ref = collection(db, 'users', user.uid, 'notes');
         const docRef = await addDoc(ref, payload);
-        dispatch({
-          type: 'create',
-          payload: {
-            id: docRef.id,
-            userId: user.uid,
-            title,
-            content,
-          },
-        });
+        dispatch({ type: 'select', payload: { id: docRef.id } });
         return docRef.id;
       } catch (e) {
         console.error('createNote: ошибка Firestore', e);
