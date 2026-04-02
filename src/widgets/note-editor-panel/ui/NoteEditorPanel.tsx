@@ -1,9 +1,9 @@
-import { Box, Title, Text, TextInput, Textarea, Modal, Button } from "@mantine/core";
+import { Box, Text, Modal, Button } from "@mantine/core";
 import { NoteToolbar } from '@/features/note-toolbar';
 import type { Note } from '@/entities/note/model/types';
 import { formatNoteDate } from '@/shared/lib/formatDate';
-import type React from 'react';
 import { useEffect, useState, useRef } from "react";
+import ReactMarkdown from 'react-markdown';
 
 type NoteEditorPanelProps = {
   note: Note | null;
@@ -20,6 +20,13 @@ export const NoteEditorPanel = ({ note, onCreateNote, onUpdateNote, editNoteId, 
   const [openedDelete, setOpenedDelete] = useState(false);
   const editorRef = useRef<HTMLDivElement | null>(null);
   const toolbarRef = useRef<HTMLDivElement | null>(null);
+  const editableRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (isEditing && editableRef.current && note) {
+      editableRef.current.innerText = note.content ?? '';
+    }
+  }, [isEditing, note?.id]);
 
   useEffect(() => {
     if (!note) {
@@ -36,28 +43,38 @@ export const NoteEditorPanel = ({ note, onCreateNote, onUpdateNote, editNoteId, 
 
   useEffect(() => {
     if (!isEditing) return;
-  
+
     const onPointerDown = (e: MouseEvent | TouchEvent) => {
-      if (!editorRef.current) return;
       if (openedDelete) return;
-  
+
       const target = e.target as Node;
-  
+
       if (toolbarRef.current?.contains(target)) return;
-  
-      if (editorRef.current.contains(target)) return;
-  
+
+      if (!editableRef.current) return;
+      if (editableRef.current.contains(target)) return;
+
+      if (note) {
+        const text = (editableRef.current.innerText ?? '').replace(/\r\n/g, '\n');
+        const firstLine = text.split('\n')[0]?.trim() ?? '';
+
+        onUpdateNote(note.id, {
+          content: text,
+          title: firstLine || 'Новая заметка',
+        });
+      }
+
       setIsEditing(false);
     };
-  
+
     document.addEventListener('mousedown', onPointerDown);
     document.addEventListener('touchstart', onPointerDown);
-  
+
     return () => {
       document.removeEventListener('mousedown', onPointerDown);
       document.removeEventListener('touchstart', onPointerDown);
     };
-  }, [isEditing, openedDelete]);
+  }, [isEditing, openedDelete, note?.id, onUpdateNote]);
 
   return (
     <Box
@@ -117,35 +134,60 @@ export const NoteEditorPanel = ({ note, onCreateNote, onUpdateNote, editNoteId, 
         )}
 
         {note && isEditing && (
-          <div ref={editorRef}>
-            <TextInput
-              label="Заголовок"
-              value={note.title}
-              onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                onUpdateNote(note.id, { title: event.currentTarget.value })
-              }
-              mb="sm"
+          <Box style={{ position: 'relative', padding: 0 }}>
+            {/* плейсхолдер */}
+            {(!note.content || !note.content.trim()) && (
+              <Text
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  color: '#adb5bd',
+                  pointerEvents: 'none',
+                  padding: 0,
+                }}
+              >
+                Введите заметку...
+              </Text>
+            )}
+
+            <div
+              ref={editableRef}
+              contentEditable
+              suppressContentEditableWarning
+              onInput={(e) => {
+                const text = (e.currentTarget.innerText ?? '').replace(/\r\n/g, '\n');
+
+                const firstLine = text.split('\n')[0]?.trim() ?? '';
+                onUpdateNote(note.id, {
+                  content: text,
+                  title: firstLine || 'Новая заметка',
+                });
+              }}
+              style={{
+                minHeight: 200,
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+                outline: 'none',
+                fontSize: 18,
+                lineHeight: 1.6,
+                padding: 0,
+              }}
             />
-            <Textarea
-              label="Текст"
-              autosize
-              minRows={6}
-              value={note.content}
-              onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) =>
-                onUpdateNote(note.id, { content: event.currentTarget.value })
-              }
-            />
-          </div>
+          </Box>
         )}
         {note && !isEditing && (
           <div ref={editorRef}>
             <Text size="xs" c="dimmed" ta="center" mb="lg">
               {formatNoteDate(note.updatedAt)}
             </Text>
-            <Title order={2} fw={700} mb="sm">
-              {note.title}
-            </Title>
-            <Text size="sm">{note.content || 'Текст заметки пока пустой'}</Text>
+            {note.content?.trim() ? (
+              <Box style={{ fontSize: 14, lineHeight: 1.6 }}>
+                <ReactMarkdown skipHtml>{note.content}</ReactMarkdown>
+              </Box>
+            ) : (
+              <Text size="sm">Текст заметки пока пустой</Text>
+            )}
           </div>
         )}
       </Box>

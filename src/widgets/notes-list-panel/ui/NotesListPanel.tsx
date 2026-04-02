@@ -1,5 +1,6 @@
-import { Box, Text } from "@mantine/core";
+import { Box } from "@mantine/core";
 import type { Note, NoteId } from '@/entities/note/model/types';
+import { stripMarkdownForPreview } from '@/shared/lib/stripMarkdownPreview';
 
 type NotesListPanelProps = {
   notes: Note[];
@@ -54,12 +55,55 @@ export const NotesListPanel = ({ notes, selectedNoteId, onSelectNote }: NotesLis
             }}
             onClick={() => onSelectNote(note.id)}
           >
-            <Text fw={600} size="sm">
-              {note.title || 'Без названия'}
-            </Text>
-            <Text size="xs" c="dimmed" truncate="end">
-              {note.content || 'Текст заметки пока пустой'}
-            </Text>
+            {(() => {
+              const firstLine = (s: string) => (s ?? '').split(/\r?\n/)[0]?.trim() ?? '';
+
+              const titleLine = firstLine(note.title || 'Без названия');
+
+              const contentLines = (note.content || '').split(/\r?\n/);
+              const contentLine = contentLines[1]?.trim() ?? contentLines[0]?.trim() ?? '';
+
+              const emptyPlaceholder = 'Текст заметки пока пустой';
+
+              return (
+                <>
+                  <Box
+                    style={{
+                      fontWeight: 600,
+                      fontSize: 14,
+                      lineHeight: 1.25,
+                      display: '-webkit-box',
+                      WebkitLineClamp: 1,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <span>
+                      {stripMarkdownForPreview(titleLine) || 'Без названия'}
+                    </span>
+                  </Box>
+
+                  <Box
+                    style={{
+                      marginTop: 4,
+                      fontSize: 12,
+                      color: '#868e96',
+                      lineHeight: 1.4,
+                      display: '-webkit-box',
+                      WebkitLineClamp: 1,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <span>
+                      {contentLine
+                        ? stripMarkdownForPreview(contentLine) || emptyPlaceholder
+                        : emptyPlaceholder}
+                    </span>
+                  </Box>
+                </>
+              );
+            })()}
           </Box>
         ))}
       </Box>
