@@ -12,6 +12,7 @@ import {
   addDoc,
   doc,
   updateDoc,
+  deleteDoc,
   QueryDocumentSnapshot
 } from 'firebase/firestore';
 import { db } from '@/shared/api/firebase';
@@ -55,7 +56,6 @@ export function useNotes(): NotesContextValue {
   }
   return ctx;
 }
-
 
 export function noteFromFirestore(
   docSnap: QueryDocumentSnapshot,
@@ -236,8 +236,18 @@ export function NotesProvider({ children }: NotesProviderProps) {
   );
 
   const deleteNote = useCallback(async (id: NoteId) => {
-    dispatch({ type: 'delete', payload: { id } });
-  }, []);
+    if (!user) {
+      console.log('Пользователь не авторизован');
+      return;
+    }
+    const noteRef = doc(db, 'users', user.uid, 'notes', id);
+    try {
+      await deleteDoc(noteRef);
+      dispatch({ type: 'delete', payload: { id } });
+    } catch (e) {
+      console.log('Ошибка Firestore', e);
+    }
+  }, [user]);
 
   const selectNote = useCallback((id: NoteId | null) => {
     dispatch({ type: 'select', payload: { id } });
