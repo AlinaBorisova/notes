@@ -3,7 +3,7 @@ import { NoteToolbar } from '@/features/note-toolbar';
 import type { Note } from '@/entities/note/model/types';
 import { formatNoteDate } from '@/shared/lib/formatDate';
 import type React from 'react';
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 type NoteEditorPanelProps = {
   note: Note | null;
@@ -18,6 +18,8 @@ type NoteEditorPanelProps = {
 export const NoteEditorPanel = ({ note, onCreateNote, onUpdateNote, editNoteId, onDeleteNote, searchQuery, onSearchChange }: NoteEditorPanelProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [openedDelete, setOpenedDelete] = useState(false);
+  const editorRef = useRef<HTMLDivElement | null>(null);
+  const toolbarRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!note) {
@@ -32,6 +34,31 @@ export const NoteEditorPanel = ({ note, onCreateNote, onUpdateNote, editNoteId, 
     }
   }, [note?.id, editNoteId]);
 
+  useEffect(() => {
+    if (!isEditing) return;
+  
+    const onPointerDown = (e: MouseEvent | TouchEvent) => {
+      if (!editorRef.current) return;
+      if (openedDelete) return;
+  
+      const target = e.target as Node;
+  
+      if (toolbarRef.current?.contains(target)) return;
+  
+      if (editorRef.current.contains(target)) return;
+  
+      setIsEditing(false);
+    };
+  
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('touchstart', onPointerDown);
+  
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('touchstart', onPointerDown);
+    };
+  }, [isEditing, openedDelete]);
+
   return (
     <Box
       style={{
@@ -45,6 +72,7 @@ export const NoteEditorPanel = ({ note, onCreateNote, onUpdateNote, editNoteId, 
       }
     >
       <Box
+        ref={toolbarRef}
         px="md"
         py={6}
         style={{
@@ -55,7 +83,10 @@ export const NoteEditorPanel = ({ note, onCreateNote, onUpdateNote, editNoteId, 
         }}
       >
         <NoteToolbar
-          onCreateNote={onCreateNote}
+          onCreateNote={() => {
+            setIsEditing(false);
+            onCreateNote();
+          }}
           onToggleEdit={() => setIsEditing((prev) => !prev)}
           onDeleteNote={() => setOpenedDelete(true)}
           searchQuery={searchQuery}
@@ -86,7 +117,7 @@ export const NoteEditorPanel = ({ note, onCreateNote, onUpdateNote, editNoteId, 
         )}
 
         {note && isEditing && (
-          <>
+          <div ref={editorRef}>
             <TextInput
               label="Заголовок"
               value={note.title}
@@ -104,10 +135,10 @@ export const NoteEditorPanel = ({ note, onCreateNote, onUpdateNote, editNoteId, 
                 onUpdateNote(note.id, { content: event.currentTarget.value })
               }
             />
-          </>
+          </div>
         )}
         {note && !isEditing && (
-          <>
+          <div ref={editorRef}>
             <Text size="xs" c="dimmed" ta="center" mb="lg">
               {formatNoteDate(note.updatedAt)}
             </Text>
@@ -115,7 +146,7 @@ export const NoteEditorPanel = ({ note, onCreateNote, onUpdateNote, editNoteId, 
               {note.title}
             </Title>
             <Text size="sm">{note.content || 'Текст заметки пока пустой'}</Text>
-          </>
+          </div>
         )}
       </Box>
     </Box >
