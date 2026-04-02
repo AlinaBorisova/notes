@@ -72,6 +72,7 @@ export const NotesPageContent = () => {
           onCreateNote={handleCreateNote}
           onUpdateNote={updateNote}
           editNoteId={editNoteId}
+          onDeleteNote={deleteNote}
         />
 
       </AppShell.Main>

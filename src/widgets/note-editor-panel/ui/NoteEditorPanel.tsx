@@ -1,4 +1,4 @@
-import { Box, Title, Text, TextInput, Textarea } from "@mantine/core";
+import { Box, Title, Text, TextInput, Textarea, Modal, Button } from "@mantine/core";
 import { NoteToolbar } from '@/features/note-toolbar';
 import type { Note } from '@/entities/note/model/types';
 import { formatNoteDate } from '@/shared/lib/formatDate';
@@ -10,10 +10,12 @@ type NoteEditorPanelProps = {
   onCreateNote: () => void;
   onUpdateNote: (id: string, patch: { title?: string; content?: string }) => void;
   editNoteId?: string | null
+  onDeleteNote: (id: string) => void;
 };
 
-export const NoteEditorPanel = ({ note, onCreateNote, onUpdateNote, editNoteId }: NoteEditorPanelProps) => {
+export const NoteEditorPanel = ({ note, onCreateNote, onUpdateNote, editNoteId, onDeleteNote }: NoteEditorPanelProps) => {
   const [isEditing, setIsEditing] = useState(false);
+  const [openedDelete, setOpenedDelete] = useState(false);
 
   useEffect(() => {
     if (!note) {
@@ -53,10 +55,22 @@ export const NoteEditorPanel = ({ note, onCreateNote, onUpdateNote, editNoteId }
         <NoteToolbar
           onCreateNote={onCreateNote}
           onToggleEdit={() => setIsEditing((prev) => !prev)}
-          onDeleteNote={() => {
-            console.log('Удаление заметки, пока не реализовано');
-          }}
+          onDeleteNote={() => setOpenedDelete(true)}
         />
+
+        <Modal opened={openedDelete} onClose={() => setOpenedDelete(false)} title="Удаление заметки">
+          <Text>Вы уверены, что хотите удалить эту заметку?</Text>
+          <Button
+            onClick={() => {
+              if (!note) return;
+              onDeleteNote(note.id);
+              setOpenedDelete(false);
+            }}
+          >
+            Удалить
+          </Button>
+        </Modal>
+
       </Box>
 
       <Box
