@@ -110,9 +110,12 @@ export const NoteEditorPanel = ({ note, onCreateNote, onUpdateNote, editNoteId, 
           onSearchChange={onSearchChange}
         />
 
-        <Modal opened={openedDelete} onClose={() => setOpenedDelete(false)} title="Удаление заметки">
+        <Modal p="xl" radius="xl" opened={openedDelete} onClose={() => setOpenedDelete(false)} title="Удаление заметки">
           <Text>Вы уверены, что хотите удалить эту заметку?</Text>
           <Button
+            mt="md"
+            color="yellow"
+            radius="xl"
             onClick={() => {
               if (!note) return;
               onDeleteNote(note.id);

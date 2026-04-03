@@ -75,6 +75,7 @@ export const NoteToolbar = ({ onCreateNote, onToggleEdit, onDeleteNote, searchQu
         <TextInput
           placeholder="Поиск"
           size="sm"
+          radius="xl"
           leftSection={<IconSearch size={16} stroke={1.5} />}
           aria-label="Поиск заметок"
           style={{ flex: '1 1 160px', maxWidth: 280, minWidth: 120 }}
