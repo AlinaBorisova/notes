@@ -1,6 +1,5 @@
 import { NoteEditorPanel } from '@/widgets/note-editor-panel';
 import { NotesListPanel } from '@/widgets/notes-list-panel';
-import { NotesSidebar } from '@/widgets/notes-sidebar';
 import { AppShell } from '@mantine/core';
 import { NotesProvider, useNotes } from '@/entities/note/model/notes-context';
 import { useEffect, useMemo, useState } from 'react';
@@ -64,7 +63,6 @@ export const NotesPageContent = () => {
   return (
     <AppShell
       mode="static"
-      navbar={{ width: 260, breakpoint: 'sm' }}
       padding={0}
       styles={{
         root: {
@@ -78,7 +76,6 @@ export const NotesPageContent = () => {
         },
       }}
     >
-      <NotesSidebar />
 
       <AppShell.Main
         style={{
